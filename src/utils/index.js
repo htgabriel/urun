@@ -22,4 +22,25 @@ function formatTimeString(time, showMsecs) {
 	return formatted;
 }
 
-export { formatTimeString };
+function convertNumToTime(number) {
+	let sign = (number >= 0) ? 1 : -1;
+	
+	number = number * sign;
+	
+	let hour = Math.floor(number);
+	let decpart = number - hour;
+	
+	let min = 1 / 60;
+	decpart = min * Math.round(decpart / min);
+	
+	let minute = Math.floor(decpart * 60) + '';
+	
+	if(minute < 10) minute = `0${minute}`;
+	if(hour < 10) hour = `0${hour}`;
+	
+	sign = sign === 1 ? '' : '-';
+
+	return `${sign+hour}:${minute}`;
+}
+
+export { formatTimeString, convertNumToTime };
