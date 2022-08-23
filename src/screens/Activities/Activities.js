@@ -1,9 +1,18 @@
 import React, {useEffect, useState} from "react";
-import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {PermissionsAndroid, Platform, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome5";
-import {formatTimeString} from "../../utils";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import {formatTimeString, convertNumToTime} from "../../utils";
 import ActivitiesMap from "./ActivitiesMap";
+import Button from "../../components/Button";
+import Geolocation from "@react-native-community/geolocation";
+import {AnimatedRegion} from "react-native-maps";
+import haversine from "haversine";
 
+const LATITUDE_DELTA = 0.009;
+const LONGITUDE_DELTA = 0.009;
+const LATITUDE = 0;
+const LONGITUDE = 0;
 
 export default function Activities() {
     const [isRunning, setIsRunning] = useState(false);
@@ -11,7 +20,47 @@ export default function Activities() {
     const [timer, setTimer] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [elapsedTime, setElapsedTime] = useState(startTime || 0);
-    const [mapOpen, setMapOpen] = useState(false)
+    const [mapIsOpen, setMapOpen] = useState(false)
+    const [location, setLocation] = useState({
+        latitude: LATITUDE,
+        longitude: LONGITUDE,
+        latitudeDelta: LATITUDE_DELTA,
+        longitudeDelta: LONGITUDE_DELTA
+    })
+    const [coordinate, setCoordinate] = useState(new AnimatedRegion({
+        latitude: LATITUDE,
+        longitude: LONGITUDE,
+        latitudeDelta: LATITUDE_DELTA,
+        longitudeDelta: LONGITUDE_DELTA
+    }))
+    const [routeCoordinates, setRouteCoordinates] = useState([])
+    const [distanceTravelled, setDistanceTravelled] = useState(0)
+    const [marker, setMarker] = useState(null)
+    const [prevLatLng, setPrevLatLng] = useState({})
+    const [newCoordinate, setNewCoordinate] = useState({})
+    const [mediumPace, setMediumPace] = useState(0)
+    const [currentPace, setCurrentPace] = useState(0)
+    
+    useEffect(() => {
+        (async () => {
+            const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                {
+                    title: "Permissão de Acesso à Localização",
+                    message: "Este aplicativo precisa acessar sua localização.",
+                    buttonNeutral: "Pergunte-me depois",
+                    buttonNegative: "Cancelar",
+                    buttonPositive: "OK"
+                }
+            );
+    
+            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                getLocation();
+            }else{
+                alert('Permissão de Localização negada');
+            }
+        })()
+    }, [])
     
     useEffect(() => {
         if(startTime){
@@ -21,92 +70,185 @@ export default function Activities() {
         }
     }, [startTime])
     
-    const _handleTimer = async() => {
+    useEffect(() => {
+        if(Object.keys(newCoordinate).length){
+            setLocation({...location, ...newCoordinate})
+            setDistanceTravelled(distanceTravelled + calcDistance(newCoordinate, prevLatLng))
+            setPrevLatLng(newCoordinate)
+            setRouteCoordinates(prevCoordinate => [...prevCoordinate, newCoordinate])
+            
+            if(distanceTravelled > 0.00) setMediumPace(elapsedTime/60000 / distanceTravelled)
+        }
+    }, [newCoordinate])
+    
+    function getLocation(){
+        Geolocation.getCurrentPosition(
+            (position) => {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                
+                setLocation({
+                    latitude, longitude,
+                    latitudeDelta: LATITUDE_DELTA,
+                    longitudeDelta: LONGITUDE_DELTA
+                })
+            },
+            (error) => alert(error.message),
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+        )
+    }
+    
+    function calcDistance(newLatLng, prevLatLng){
+        return haversine(prevLatLng, newLatLng) || 0;
+    }
+    
+    function _handleStart(){
+        Geolocation.watchPosition(
+            ({coords: {latitude, longitude}}) => {
+                const newCoordinate = {latitude, longitude}
+                
+                if(Platform.OS === "android"){
+                    if(marker){
+                        marker.animateMarkerToCoordinate(
+                            newCoordinate,
+                            500
+                        )
+                    }
+    
+                    setNewCoordinate(newCoordinate)
+                }else{
+                    coordinate.timing(newCoordinate).start();
+                }
+            },
+            error => console.log("error", error.toString()),
+            {
+                enableHighAccuracy: true,
+                timeout: 500,
+                maximumAge: 10000,
+                distanceFilter: 1
+            }
+        )
+        
         setIsRunning(!isRunning)
-        setStartTime(elapsedTime ? new Date() - elapsedTime : new Date)
+        setStartTime(elapsedTime ? new Date() - elapsedTime : new Date())
         if(timer !== null){
             setIsPaused(false)
             setIsRunning(true)
         }
     }
     
-    const _handlePause = () => {
+    function _handlePause(){
         clearInterval(timer)
         setIsRunning(false)
         setIsPaused(true)
+        Geolocation.stopObserving()
+    }
+    
+    function _handleFinish(){
+        setIsRunning(false)
+        setIsPaused(false)
+        setElapsedTime(0)
+        setDistanceTravelled(0)
+        Geolocation.stopObserving()
     }
     
     return (
         <View style={styles.container}>
             <TouchableOpacity
                 style={styles.btnMap}
-                onPress={() => setMapOpen(!mapOpen)}
+                onPress={() => setMapOpen(!mapIsOpen)}
             >
-                <Icon size={40} color={"#bdbfc1"} name={"map-marker-alt"} />
+                <Icon
+                    size={40}
+                    color={"#bdbfc1"}
+                    name={"map-marker-alt"}
+                />
             </TouchableOpacity>
             
-            {mapOpen &&
+            {mapIsOpen &&
                 <ActivitiesMap
-                
+                    location={location}
+                    pin={newCoordinate}
+                    setMarker={setMarker}
+                    coordinatesTravelled={routeCoordinates}
                 />
             }
             
-            <View style={{ justifyContent: "center", alignItems: "center", marginBottom: 40 }}>
-                <Text style={[styles.chronoText, {fontSize: 20}]}>TEMPO</Text>
-                <Text style={[styles.chronoText, {fontSize: 70}]}>{formatTimeString(elapsedTime, null)}</Text>
-            </View>
-            <View style={{ justifyContent: "center", alignItems: "center", marginBottom: 40 }}>
-                <Text style={[styles.chronoText, {fontSize: 20}]}>DISTÂNCIA</Text>
-                <Text style={[styles.chronoText, {fontSize: 100}]}>0,00</Text>
-            </View>
-            <View style={{ justifyContent: "center", alignItems: "center", marginBottom: 20, flexDirection: "row",  }}>
-                <View>
-                    <Text style={[styles.chronoText, {fontSize: 15}]}>RITMO ATUAL</Text>
-                    <Text style={[styles.chronoText, {fontSize: 40}]}>00:00</Text>
+            <View style={{flex: 1}}>
+                <View style={{flex: 1, flexDirection: mapIsOpen ? "row" : "column"}}>
+                    <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
+                        <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 20 : 13}]}>TEMPO</Text>
+                        <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 70 : 35}]}>{formatTimeString(elapsedTime, null)}</Text>
+                    </View>
+                    <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
+                        <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 20 : 13}]}>DISTÂNCIA (km) </Text>
+                        <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 70 : 35}]}>{parseFloat(distanceTravelled).toFixed(2)}</Text>
+                    </View>
                 </View>
-                <View style={{paddingLeft: 70}}>
-                    <Text style={[styles.chronoText, {fontSize: 15}]}>RITMO MÉDIO</Text>
-                    <Text style={[styles.chronoText, {fontSize: 40}]}>00:00</Text>
+                
+                <View style={{flex: 1, flexDirection: mapIsOpen ? "row" : "column"}}>
+                    <View style={{flex: 1, flexDirection: "row", justifyContent: "space-evenly", alignItems: "center"}}>
+                        {!mapIsOpen ?
+                            <View style={{alignItems: "center"}}>
+                                <Text style={[styles.timerText, {fontSize: 15}]}>RITMO ATUAL</Text>
+                                <Text style={[styles.timerText, {fontSize: 40}]}>00:00</Text>
+                            </View> : null
+                        }
+    
+                        <View style={{alignItems: "center"}}>
+                            <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 15 : 13}]}>RITMO MÉDIO (km)</Text>
+                            <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 40 : 35}]}>{convertNumToTime(mediumPace)}</Text>
+                        </View>
+                    </View>
+                    
+                    <View style={{flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "row"}}>
+                        {!isRunning && !isPaused &&
+                            <Button
+                                size={mapIsOpen ? "small" : "normal"}
+                                type={"Start"}
+                                label={"Iniciar"}
+                                onPress={_handleStart}
+                            />
+                        }
+                        
+                        {isRunning &&
+                            <Button
+                                size={mapIsOpen ? "small" : "normal"}
+                                type={"Pause"}
+                                onPress={_handlePause}
+                            >
+                                <Ionicons style={{color: "#ed3237"}} name={"pause"} size={60}/>
+                            </Button>
+                            // <PauseButton size={mapIsOpen ? "small" : null} type={"End"} onPress={_handlePause} />
+                        }
+                        
+                        {isPaused ? (
+                            <>
+                                <Button
+                                    size={mapIsOpen ? "small" : "normal"}
+                                    type={"Resume"}
+                                    onPress={_handleStart}
+                                >
+                                    <Text
+                                        style={{
+                                            fontSize: mapIsOpen ? 12 : 18,
+                                            color: "#00a859"
+                                        }}
+                                    >
+                                        {"CONTINUAR"}
+                                    </Text>
+                                </Button>
+    
+                                <Button
+                                    size={mapIsOpen ? "small" : "normal"}
+                                    type={"Finish"}
+                                    label={"CONCLUIR"}
+                                    onPress={_handleFinish}
+                                />
+                            </>
+                        ) : null}
+                    </View>
                 </View>
-            </View>
-            <View style={{ justifyContent: "center", alignItems: "center", flexDirection: "row", marginTop: 10 }}>
-                {!isRunning || isPaused ?
-                    <TouchableOpacity
-                        style={[styles.btn, {
-                            borderWidth: 5,
-                            borderColor: "#00a859",
-                            backgroundColor: isPaused ? "#FFFFFF" : "#00a859"
-                        }]}
-                        onPress={_handleTimer}
-                    >
-                        <Text
-                            style={[styles.btnText, {
-                                color: isPaused ? "#00a859" : "#ffffff"
-                            }]}
-                        >{isPaused ? "CONTINUAR" : "INICIAR"}</Text>
-                    </TouchableOpacity> : null
-                }
-
-                {isPaused ?
-                    <TouchableOpacity
-                        style={[styles.btn, {backgroundColor: "#f58634", marginLeft: 15}]}
-                        onPress={() => {
-                            setIsRunning(false)
-                            setIsPaused(false)
-                        }}
-                    >
-                        <Text style={[styles.btnText, {color: "#ffffff"}]}>{"CONCLUIR"}</Text>
-                    </TouchableOpacity> : null
-                }
-
-                {isRunning ?
-                    <TouchableOpacity
-                        style={[styles.btn, {backgroundColor: "#ed3237"}]}
-                        onPress={_handlePause}
-                    >
-                        <Icon style={{color: "#FFF"}} name={"stop"} size={60}/>
-                    </TouchableOpacity> : null
-                }
             </View>
         </View>
     
@@ -115,32 +257,8 @@ export default function Activities() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        alignItems: "center",
         justifyContent: "center",
         backgroundColor: "#fefefe",
-    },
-    btn: {
-        width: 120,
-        height: 120,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#000",
-        borderRadius: 60,
-    },
-    btnText: {
-        fontSize: 18,
-        color: "#FFF"
-    },
-    chronoText: {
-        color: "#000",
-        marginBottom: -10,
-    },
-    boxContainer: {
-        flex: 1,
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "center",
-        marginTop: -10,
     },
     btnMap: {
         position: "absolute",
@@ -149,10 +267,11 @@ const styles = StyleSheet.create({
         padding: 15,
         backgroundColor: "#e6e7e8",
         borderBottomStartRadius: 7,
-        borderBottomEndRadius: 7
+        borderBottomEndRadius: 7,
+        zIndex: 1
     },
-    map: {
-        // ...StyleSheet.absoluteFillObject
-        flex: 1
-    },
+    timerText: {
+        color: "#000",
+        marginBottom: -10,
+    }
 })
