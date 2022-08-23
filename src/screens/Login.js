@@ -1,5 +1,5 @@
 import React, {useContext, useState} from "react";
-import {StyleSheet} from "react-native";
+import {Image, StyleSheet, View} from "react-native";
 import {Button, TextInput} from "react-native-paper";
 import LinearGradient from "react-native-linear-gradient";
 import UserContext from "../contexts/UserContext";
@@ -14,6 +14,14 @@ export default function Login(){
 			colors={['#090f20', '#0f2048']}
 			style={styles.container}
 		>
+			
+			<View style={styles.containerImage}>
+				<Image
+					style={styles.image}
+					source={require("../assets/logo.png")}
+				/>
+			</View>
+			
 			<TextInput
 				label={"CPF"}
 				style={styles.input}
@@ -56,4 +64,13 @@ const styles = StyleSheet.create({
 	btnLogin: {
 		marginVertical: 10
 	},
+	containerImage: {
+		alignItems: "center",
+		justifyContent: "center",
+		marginBottom: 15
+	},
+	image: {
+		width: 200,
+		height: 50
+	}
 })
