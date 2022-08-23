@@ -3,14 +3,47 @@ import {NavigationContainer} from "@react-navigation/native";
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Icon from 'react-native-vector-icons/FontAwesome5';
+import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
+import Ionicons from "react-native-vector-icons/Ionicons"
+import FontAwesome5Icon from "react-native-vector-icons/FontAwesome5"
 import {Activities, Challenges, Home, Login, MenuActivities, Training, VirtualRace} from "./screens/index.js";
 import {UserProvider} from "./contexts/UserContext";
+import {Image, TouchableOpacity, View} from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 
 const Stack = createNativeStackNavigator();
 const BottomTab = createBottomTabNavigator();
 
 const App = () => {
+	const Header = () => {
+		return (
+			<LinearGradient
+				colors={['#090f20', '#0f2048']}
+				style={{flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, height: 50}}
+			>
+				<TouchableOpacity
+					onPress={() => console.log("menu")}
+				>
+					<FontAwesome5Icon color={"#2a569f"} size={30} name={"bars"} />
+				</TouchableOpacity>
+				
+				<Image style={{width: 100, height: 25}} source={require("./assets/logo.png")} />
+				
+				<TouchableOpacity
+					onPress={() => console.log("message")}
+				>
+					<Ionicons color={"#2a569f"} size={30} name={"chatbox-outline"} />
+				</TouchableOpacity>
+				
+				<TouchableOpacity
+					onPress={() => console.log("profile")}
+				>
+					<FontAwesomeIcon color={"#2a569f"} size={30} name={"user-circle-o"} />
+				</TouchableOpacity>
+			</LinearGradient>
+		)
+	}
+	
 	const AuthRoutes = () => {
 		return (
 			<Stack.Navigator
@@ -36,7 +69,7 @@ const App = () => {
 			<BottomTab.Navigator
 				initialRouteName="Home"
 				screenOptions={({ route }) => ({
-					headerShown: false,
+					header: () => <Header />,
 					tabBarActiveBackgroundColor: "#e6e7e8",
 					tabBarInactiveTintColor: "#bdbfc1",
 					tabBarInactiveBackgroundColor: "#e6e7e8",
@@ -60,7 +93,7 @@ const App = () => {
 										color={color}
 									/>
 								) : (
-									<Icon
+									<FontAwesome5Icon
 										name={iconName}
 										size={size}
 										color={color}
