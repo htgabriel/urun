@@ -10,6 +10,7 @@ import {AnimatedRegion} from "react-native-maps";
 import haversine from "haversine";
 import ReactNativeForegroundService from "@supersami/rn-foreground-service";
 import Toast from 'react-native-toast-message';
+import {ErrorMessage} from "../../helpers/HandleMessages";
 
 const LATITUDE_DELTA = 0.009;
 const LONGITUDE_DELTA = 0.009;
@@ -41,7 +42,6 @@ export default function Activities() {
     const [prevLatLng, setPrevLatLng] = useState({})
     const [newCoordinate, setNewCoordinate] = useState({})
     const [mediumPace, setMediumPace] = useState(0)
-    const [currentPace, setCurrentPace] = useState(0)
     
     useEffect(() => {
         (async () => {
@@ -70,10 +70,10 @@ export default function Activities() {
                         getLocation();
                     }
                 }else{
-                    alert('Permissão de Localização negada');
+                    ErrorMessage("Permissão de localização negada.")
                 }
             }catch (e){
-                console.log("erro", e.toString())
+                ErrorMessage(e.toString())
             }
         })()
     }, [])
@@ -123,8 +123,8 @@ export default function Activities() {
             if(!ReactNativeForegroundService.is_running()){
                 await ReactNativeForegroundService.start({
                     id: 144,
-                    title: "Current Position",
-                    message: `Location in here`,
+                    title: "uRun",
+                    message: `Monitorando sua atividade`,
                     vibration: false,
                     importance: 1
                 });
@@ -190,18 +190,32 @@ export default function Activities() {
         Geolocation.stopObserving()
     }
     
+    async function _handleMap(){
+        const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION
+        )
+    
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            setMapOpen(!mapIsOpen)
+        }else{
+            ErrorMessage("Permissão de localização negada.")
+        }
+    }
+    
     return (
         <View style={styles.container}>
-            <TouchableOpacity
-                style={styles.btnMap}
-                onPress={() => setMapOpen(!mapIsOpen)}
-            >
-                <Icon
-                    size={40}
-                    color={"#bdbfc1"}
-                    name={"map-marker-alt"}
-                />
-            </TouchableOpacity>
+            {routeCoordinates.length ? (
+                <TouchableOpacity
+                    style={styles.btnMap}
+                    onPress={_handleMap}
+                >
+                    <Icon
+                        size={40}
+                        color={mapIsOpen ? "#ef4e36" : "#bdbfc1"}
+                        name={"map-marker-alt"}
+                    />
+                </TouchableOpacity>
+            ) : null}
             
             {mapIsOpen &&
                 <ActivitiesMap
@@ -215,11 +229,11 @@ export default function Activities() {
             <View style={{flex: 1}}>
                 <View style={{flex: 1, flexDirection: mapIsOpen ? "row" : "column"}}>
                     <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
-                        <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 20 : 13}]}>TEMPO</Text>
+                        <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 22 : 18}]}>TEMPO</Text>
                         <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 70 : 35}]}>{formatTimeString(elapsedTime, null)}</Text>
                     </View>
                     <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
-                        <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 25 : 13}]}>DISTÂNCIA (km) </Text>
+                        <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 25 : 18, fontWeight: "600"}]}>DISTÂNCIA (km) </Text>
                         <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 70 : 35}]}>{parseFloat(distanceTravelled).toFixed(2)}</Text>
                     </View>
                 </View>
@@ -228,13 +242,13 @@ export default function Activities() {
                     <View style={{flex: 1, flexDirection: "row", justifyContent: "space-evenly", alignItems: "center"}}>
                         {!mapIsOpen ?
                             <View style={{alignItems: "center"}}>
-                                <Text style={[styles.timerText, {fontSize: 15}]}>RITMO ATUAL</Text>
+                                <Text style={[styles.timerText, {fontSize: 18}]}>RITMO ATUAL</Text>
                                 <Text style={[styles.timerText, {fontSize: 40}]}>00:00</Text>
                             </View> : null
                         }
     
                         <View style={{alignItems: "center"}}>
-                            <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 15 : 13}]}>RITMO MÉDIO</Text>
+                            <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 18 : 18}]}>RITMO MÉDIO</Text>
                             <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 40 : 35}]}>{convertNumToTime(mediumPace)}</Text>
                         </View>
                     </View>
