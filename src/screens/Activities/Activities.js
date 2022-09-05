@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {PermissionsAndroid, Platform, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {Image, PermissionsAndroid, Platform, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {formatTimeString, convertNumToTime} from "../../utils";
@@ -8,6 +8,8 @@ import Button from "../../components/Button";
 import Geolocation from "@react-native-community/geolocation";
 import {AnimatedRegion} from "react-native-maps";
 import haversine from "haversine";
+import ReactNativeForegroundService from "@supersami/rn-foreground-service";
+import Toast from 'react-native-toast-message';
 
 const LATITUDE_DELTA = 0.009;
 const LONGITUDE_DELTA = 0.009;
@@ -43,21 +45,35 @@ export default function Activities() {
     
     useEffect(() => {
         (async () => {
-            const granted = await PermissionsAndroid.request(
-                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-                {
-                    title: "Permissão de Acesso à Localização",
-                    message: "Este aplicativo precisa acessar sua localização.",
-                    buttonNeutral: "Pergunte-me depois",
-                    buttonNegative: "Cancelar",
-                    buttonPositive: "OK"
+            await ReactNativeForegroundService.stop()
+            ReactNativeForegroundService.remove_all_tasks()
+            Geolocation.stopObserving()
+            
+            try {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+                );
+        
+                if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                    const grantedBackground = await PermissionsAndroid.request(
+                        PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
+                        {
+                            title: "Permissão de Acesso à Localização",
+                            message: `Para que o aplicativo funcione corretamente, é necessário que a opção de localização esteja marcada como "Permitir Sempre"`,
+                            // buttonNeutral: "Pergunte-me depois",
+                            buttonNegative: "Recusar",
+                            buttonPositive: "Aceitar",
+                        }
+                    );
+                    
+                    if(grantedBackground === PermissionsAndroid.RESULTS.GRANTED){
+                        getLocation();
+                    }
+                }else{
+                    alert('Permissão de Localização negada');
                 }
-            );
-    
-            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                getLocation();
-            }else{
-                alert('Permissão de Localização negada');
+            }catch (e){
+                console.log("erro", e.toString())
             }
         })()
     }, [])
@@ -102,46 +118,68 @@ export default function Activities() {
         return haversine(prevLatLng, newLatLng) || 0;
     }
     
-    function _handleStart(){
-        Geolocation.watchPosition(
-            ({coords: {latitude, longitude}}) => {
-                const newCoordinate = {latitude, longitude}
-                
-                if(Platform.OS === "android"){
-                    if(marker){
-                        marker.animateMarkerToCoordinate(
-                            newCoordinate,
-                            500
-                        )
-                    }
-    
-                    setNewCoordinate(newCoordinate)
-                }else{
-                    coordinate.timing(newCoordinate).start();
-                }
-            },
-            error => console.log("error", error.toString()),
-            {
-                enableHighAccuracy: true,
-                timeout: 500,
-                maximumAge: 10000,
-                distanceFilter: 1
+    async function _handleStart(){
+        try{
+            if(!ReactNativeForegroundService.is_running()){
+                await ReactNativeForegroundService.start({
+                    id: 144,
+                    title: "Current Position",
+                    message: `Location in here`,
+                    vibration: false,
+                    importance: 1
+                });
             }
-        )
-        
-        setIsRunning(!isRunning)
-        setStartTime(elapsedTime ? new Date() - elapsedTime : new Date())
-        if(timer !== null){
-            setIsPaused(false)
-            setIsRunning(true)
+            
+            Geolocation.watchPosition(
+                async ({coords: {latitude, longitude}}) => {
+                    const newCoordinate = {latitude, longitude}
+
+                    if (Platform.OS === "android") {
+                        if (marker) {
+                            marker.animateMarkerToCoordinate(
+                                newCoordinate,
+                                500
+                            )
+                        }
+
+                        setNewCoordinate(newCoordinate)
+                    } else {
+                        coordinate.timing(newCoordinate).start();
+                    }
+
+                    // await ReactNativeForegroundService.update({
+                    //     id: 144,
+                    //     title: "Current Position",
+                    //     message: `${newCoordinate.latitude} ${newCoordinate.longitude}`,
+                    //     vibration: false
+                    // })
+                },
+                error => console.log("error", error.toString()),
+                {
+                    enableHighAccuracy: true,
+                    timeout: 500,
+                    maximumAge: 10000,
+                    distanceFilter: 1
+                }
+            )
+
+            setIsRunning(!isRunning)
+            setStartTime(elapsedTime ? new Date() - elapsedTime : new Date())
+            if(timer !== null){
+                setIsPaused(false)
+                setIsRunning(true)
+            }
+        }catch (e) {
+            console.log("Error -> ", e.toString())
         }
     }
     
-    function _handlePause(){
+    async function _handlePause(){
         clearInterval(timer)
         setIsRunning(false)
         setIsPaused(true)
         Geolocation.stopObserving()
+        await ReactNativeForegroundService.stop()
     }
     
     function _handleFinish(){
@@ -181,7 +219,7 @@ export default function Activities() {
                         <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 70 : 35}]}>{formatTimeString(elapsedTime, null)}</Text>
                     </View>
                     <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
-                        <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 20 : 13}]}>DISTÂNCIA (km) </Text>
+                        <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 25 : 13}]}>DISTÂNCIA (km) </Text>
                         <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 70 : 35}]}>{parseFloat(distanceTravelled).toFixed(2)}</Text>
                     </View>
                 </View>
@@ -196,7 +234,7 @@ export default function Activities() {
                         }
     
                         <View style={{alignItems: "center"}}>
-                            <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 15 : 13}]}>RITMO MÉDIO (km)</Text>
+                            <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 15 : 13}]}>RITMO MÉDIO</Text>
                             <Text style={[styles.timerText, {fontSize: !mapIsOpen ? 40 : 35}]}>{convertNumToTime(mediumPace)}</Text>
                         </View>
                     </View>

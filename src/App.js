@@ -10,6 +10,7 @@ import {Activities, Challenges, Home, Login, MenuActivities, Training, VirtualRa
 import {UserProvider} from "./contexts/UserContext";
 import {Image, TouchableOpacity, View} from "react-native";
 import LinearGradient from "react-native-linear-gradient";
+import Toast from "react-native-toast-message";
 
 const Stack = createNativeStackNavigator();
 const BottomTab = createBottomTabNavigator();
@@ -154,6 +155,8 @@ const App = () => {
 			<UserProvider>
 				<AuthRoutes />
 			</UserProvider>
+		
+			<Toast />
 		</NavigationContainer>
 	);
 }

@@ -31,5 +31,22 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- Add these -->
+      <meta-data
+              android:name="com.supersami.foregroundservice.notification_channel_name"
+              android:value="Sticky Title"
+      />
+      <meta-data
+              android:name="com.supersami.foregroundservice.notification_channel_description"
+              android:value="Sticky Description."
+      />
+      <meta-data
+              android:name="com.supersami.foregroundservice.notification_color"
+              android:resource="@color/blue"
+      />
+      <service android:name="com.supersami.foregroundservice.ForegroundService"/>
+      <service android:name="com.supersami.foregroundservice.ForegroundServiceTask"/>
+      <!-- End of content to add -->
     </application>
 </manifest>
