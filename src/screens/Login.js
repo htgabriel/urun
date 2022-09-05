@@ -1,12 +1,12 @@
 import React, {useContext, useState} from "react";
-import {Image, StyleSheet, View} from "react-native";
+import {Image, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {Button, TextInput} from "react-native-paper";
 import LinearGradient from "react-native-linear-gradient";
 import UserContext from "../contexts/UserContext";
 
 export default function Login(){
-	const [cpf, setCpf] = useState(true ? "075.996.788-16" : "")
-	const [password, setPassword] = useState(true ? "atleta" : "")
+	const [cpf, setCpf] = useState()
+	const [password, setPassword] = useState()
 	const {Login} = useContext(UserContext);
 	
 	return (
@@ -47,6 +47,20 @@ export default function Login(){
 			>
 				{"Login"}
 			</Button>
+			
+			<View style={{flexDirection: "row", justifyContent: "space-between"}}>
+				<TouchableOpacity
+					onPress={() => console.log("Cadastrar")}
+				>
+					<Text style={styles.textActions}>{"Cadastre-se"}</Text>
+				</TouchableOpacity>
+				
+				<TouchableOpacity
+					onPress={() => console.log("Recuperar senha")}
+				>
+					<Text style={styles.textActions}>{"Recuperar Senha"}</Text>
+				</TouchableOpacity>
+			</View>
 		</LinearGradient>
 	)
 }
@@ -72,5 +86,9 @@ const styles = StyleSheet.create({
 	image: {
 		width: 200,
 		height: 50
+	},
+	textActions: {
+		fontSize: 14,
+		color: "#FFF"
 	}
 })
