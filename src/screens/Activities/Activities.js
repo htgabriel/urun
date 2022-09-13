@@ -11,6 +11,8 @@ import haversine from "haversine";
 import ReactNativeForegroundService from "@supersami/rn-foreground-service";
 import Toast from 'react-native-toast-message';
 import {ErrorMessage} from "../../helpers/HandleMessages";
+import Dialog from "react-native-dialog"
+import {useNavigation} from "@react-navigation/native";
 
 const LATITUDE_DELTA = 0.009;
 const LONGITUDE_DELTA = 0.009;
@@ -42,12 +44,14 @@ export default function Activities() {
     const [prevLatLng, setPrevLatLng] = useState({})
     const [newCoordinate, setNewCoordinate] = useState({})
     const [mediumPace, setMediumPace] = useState(0)
+    const [modalVisible, setModalVisible] = useState(false)
+    const navigation = useNavigation();
     
     useEffect(() => {
         (async () => {
-            await ReactNativeForegroundService.stop()
-            ReactNativeForegroundService.remove_all_tasks()
-            Geolocation.stopObserving()
+            // await ReactNativeForegroundService.stop()
+            // ReactNativeForegroundService.remove_all_tasks()
+            // Geolocation.stopObserving()
             
             try {
                 const granted = await PermissionsAndroid.request(
@@ -109,7 +113,14 @@ export default function Activities() {
                     longitudeDelta: LONGITUDE_DELTA
                 })
             },
-            (error) => alert(error.message),
+            error => {
+                if(error.code === 3){
+                    console.log('teste')
+                    setModalVisible(true);
+                }else{
+                    ErrorMessage(error.message)
+                }
+            },
             { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
         )
     }
@@ -187,6 +198,8 @@ export default function Activities() {
         setIsPaused(false)
         setElapsedTime(0)
         setDistanceTravelled(0)
+        setModalVisible(false)
+        clearInterval(timer)
         Geolocation.stopObserving()
     }
     
@@ -225,6 +238,18 @@ export default function Activities() {
                     coordinatesTravelled={routeCoordinates}
                 />
             }
+    
+            <Dialog.Container visible={modalVisible}>
+                <Dialog.Title>Localização indisponível</Dialog.Title>
+                <Dialog.Description>
+                    A precisão do GPS está fraca no seu local atual.
+                    Para que o aplicativo consiga monitorar seu progresso corretamente,
+                    é necessário que você esteja ao ar livre, com uma linha direta de visão para o céu.
+                    Você pode continuar, mas sua atividade talvez não tenha precisão.
+                </Dialog.Description>
+                <Dialog.Button label="Continuar" onPress={() => setModalVisible(false)} />
+                <Dialog.Button label="Suspender" onPress={() => navigation.navigate("MenuActivities")} />
+            </Dialog.Container>
             
             <View style={{flex: 1}}>
                 <View style={{flex: 1, flexDirection: mapIsOpen ? "row" : "column"}}>
