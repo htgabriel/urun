@@ -1,13 +1,24 @@
-import React, {useContext, useState} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import {Image, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {Button, TextInput} from "react-native-paper";
 import LinearGradient from "react-native-linear-gradient";
 import UserContext from "../contexts/UserContext";
+import {getItem} from "../helpers/AsyncStorage";
 
-export default function Login(){
+export default function Login({navigation}){
 	const [cpf, setCpf] = useState()
 	const [password, setPassword] = useState()
 	const {Login} = useContext(UserContext);
+	
+	useEffect(() => {
+		(async () => {
+			const cpf = await getItem("@userCPF")
+			const password = await getItem("@userPassword")
+			
+			setCpf(cpf)
+			setPassword(password)
+		})()
+	}, [])
 	
 	return (
 		<LinearGradient
@@ -50,13 +61,13 @@ export default function Login(){
 			
 			<View style={{flexDirection: "row", justifyContent: "space-between"}}>
 				<TouchableOpacity
-					onPress={() => console.log("Cadastrar")}
+					onPress={() => navigation.navigate("Register")}
 				>
 					<Text style={styles.textActions}>{"Cadastre-se"}</Text>
 				</TouchableOpacity>
 				
 				<TouchableOpacity
-					onPress={() => console.log("Recuperar senha")}
+					onPress={() => navigation.navigate("PasswordRecovery")}
 				>
 					<Text style={styles.textActions}>{"Recuperar Senha"}</Text>
 				</TouchableOpacity>
