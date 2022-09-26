@@ -84,7 +84,7 @@ const App = () => {
 	const SignedRoutes = () => {
 		return (
 			<BottomTab.Navigator
-				initialRouteName="Home"
+				initialRouteName="HomeSignedRoutes"
 				screenOptions={({ route }) => ({
 					header: () => <Header />,
 					tabBarActiveBackgroundColor: "#e6e7e8",
@@ -93,7 +93,7 @@ const App = () => {
 					tabBarShowLabel: false,
 					tabBarIcon: ({ focused, size, color }) => {
 						let iconName;
-						if (route.name === "Home")                  iconName = "home";
+						if (route.name === "HomeSignedRoutes")      iconName = "home";
 						else if (route.name === "VirtualRace")      iconName = "running";
 						else if (route.name === "ActivitiesRoutes") iconName = "stopwatch";
 						else if (route.name === "Challenges")       iconName = "star";
@@ -122,7 +122,7 @@ const App = () => {
 				})}
 			>
 				<BottomTab.Screen
-					name={"Home"}
+					name={"HomeSignedRoutes"}
 					component={HomeSignedRoutes}
 				/>
 				<BottomTab.Screen
