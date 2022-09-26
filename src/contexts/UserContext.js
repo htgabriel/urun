@@ -2,6 +2,7 @@ import React, {createContext, useState} from "react";
 import api from "../utils/api";
 import {useNavigation} from "@react-navigation/native";
 import {ErrorMessage} from "../helpers/HandleMessages";
+import {setItem} from "../helpers/AsyncStorage";
 // import {API_EMP, API_KEY} from "@env";
 
 const UserContext = createContext({})
@@ -25,6 +26,9 @@ export const UserProvider = ({children}) => {
 			setUser(data)
 			
 			if(data?.status !== "falha"){
+				await setItem("@userCPF", cpf)
+				await setItem("@userPassword", password)
+				
 				navigation.navigate("SignedRoutes")
 				
 				return user
