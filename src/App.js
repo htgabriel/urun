@@ -1,14 +1,14 @@
 import React from "react";
-import {NavigationContainer} from "@react-navigation/native";
+import {NavigationContainer, useNavigation} from "@react-navigation/native";
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from "react-native-vector-icons/Ionicons"
 import FontAwesome5Icon from "react-native-vector-icons/FontAwesome5"
-import {Activities, Challenges, Home, Login, MenuActivities, Training, VirtualRace} from "./screens/index.js";
+import {Activities, Challenges, Home, Login, Menu, MenuActivities, Message, PasswordRecovery, Profile, Register, Training, VirtualRace} from "./screens/index.js";
 import {UserProvider} from "./contexts/UserContext";
-import {Image, TouchableOpacity, View} from "react-native";
+import {Image, TouchableOpacity} from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import Toast from "react-native-toast-message";
 
@@ -17,13 +17,15 @@ const BottomTab = createBottomTabNavigator();
 
 const App = () => {
 	const Header = () => {
+		const navigation = useNavigation();
+		
 		return (
 			<LinearGradient
 				colors={['#090f20', '#0f2048']}
 				style={{flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, height: 50}}
 			>
 				<TouchableOpacity
-					onPress={() => console.log("menu")}
+					onPress={() => navigation.navigate("Menu")}
 				>
 					<FontAwesome5Icon color={"#2a569f"} size={30} name={"bars"} />
 				</TouchableOpacity>
@@ -31,13 +33,13 @@ const App = () => {
 				<Image style={{width: 100, height: 25}} source={require("./assets/logo.png")} />
 				
 				<TouchableOpacity
-					onPress={() => console.log("message")}
+					onPress={() => navigation.navigate("Message")}
 				>
 					<Ionicons color={"#2a569f"} size={30} name={"chatbox-outline"} />
 				</TouchableOpacity>
 				
 				<TouchableOpacity
-					onPress={() => console.log("profile")}
+					onPress={() => navigation.navigate("Profile")}
 				>
 					<FontAwesomeIcon color={"#2a569f"} size={30} name={"user-circle-o"} />
 				</TouchableOpacity>
@@ -52,15 +54,29 @@ const App = () => {
 					headerShown: false
 				}}
 			>
+				{/*NOT LOGGED*/}
 				<Stack.Screen
 					name={"Login"}
 					component={Login}
 				/>
 				
 				<Stack.Screen
-					name={"SignedRoutes"}
-					component={SignedRoutes}
+					name={"PasswordRecovery"}
+					component={PasswordRecovery}
 				/>
+				
+				<Stack.Screen
+					name={"Register"}
+					component={Register}
+				/>
+				
+				{/*LOGGED*/}
+				<Stack.Group>
+					<Stack.Screen
+						name={"SignedRoutes"}
+						component={SignedRoutes}
+					/>
+				</Stack.Group>
 			</Stack.Navigator>
 		)
 	}
@@ -107,7 +123,7 @@ const App = () => {
 			>
 				<BottomTab.Screen
 					name={"Home"}
-					component={Home}
+					component={HomeSignedRoutes}
 				/>
 				<BottomTab.Screen
 					name={"VirtualRace"}
@@ -127,6 +143,36 @@ const App = () => {
 				/>
 			</BottomTab.Navigator>
 		);
+	}
+	
+	const HomeSignedRoutes = () => {
+		return (
+			<Stack.Navigator
+				screenOptions={{
+					headerShown: false
+				}}
+			>
+				<Stack.Screen
+					name={"Home"}
+					component={Home}
+				/>
+				
+				<Stack.Screen
+					name={"Menu"}
+					component={Menu}
+				/>
+				
+				<Stack.Screen
+					name={"Message"}
+					component={Message}
+				/>
+				
+				<Stack.Screen
+					name={"Profile"}
+					component={Profile}
+				/>
+			</Stack.Navigator>
+		)
 	}
 	
 	const ActivitiesRoutes = () => {
