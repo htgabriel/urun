@@ -45,7 +45,11 @@ export default function Activities() {
     const [newCoordinate, setNewCoordinate] = useState({})
     const [mediumPace, setMediumPace] = useState(0)
     const [modalVisible, setModalVisible] = useState(false)
-    const navigation = useNavigation();
+    const navigation = useNavigation()
+    const [actualPace, setActualPace] = useState({
+        distanceTravelledRounded: 0,
+        elapsedTime: 0,
+    })
     
     useEffect(() => {
         (async () => {
@@ -101,6 +105,18 @@ export default function Activities() {
         }
     }, [newCoordinate])
     
+    // CALCULA O RITMO ATUAL DE ACORDO COM A DISTANCIA PERCORRIDA E O TEMPO
+    useEffect(() => {
+        const distanceTravelledRounded = parseInt(distanceTravelled)
+        
+        if(distanceTravelledRounded > actualPace?.distanceTravelledRounded){
+            setActualPace({
+                distanceTravelledRounded,
+                elapsedTime: elapsedTime - actualPace.elapsedTime
+            })
+        }
+    }, [routeCoordinates])
+    
     function getLocation(){
         Geolocation.getCurrentPosition(
             (position) => {
@@ -115,7 +131,6 @@ export default function Activities() {
             },
             error => {
                 if(error.code === 3){
-                    console.log('teste')
                     setModalVisible(true);
                 }else{
                     ErrorMessage(error.message)
@@ -268,7 +283,7 @@ export default function Activities() {
                         {!mapIsOpen ?
                             <View style={{alignItems: "center"}}>
                                 <Text style={[styles.timerText, {fontSize: 18}]}>RITMO ATUAL</Text>
-                                <Text style={[styles.timerText, {fontSize: 40}]}>00:00</Text>
+                                <Text style={[styles.timerText, {fontSize: 40}]}>{actualPace?.elapsedTime ? formatTimeString(actualPace?.elapsedTime, null) : '00:00'}</Text>
                             </View> : null
                         }
     
