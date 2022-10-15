@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Image, PermissionsAndroid, Platform, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {PermissionsAndroid, Platform, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {formatTimeString, convertNumToTime} from "../../utils";
@@ -9,7 +9,6 @@ import Geolocation from "@react-native-community/geolocation";
 import {AnimatedRegion} from "react-native-maps";
 import haversine from "haversine";
 import ReactNativeForegroundService from "@supersami/rn-foreground-service";
-import Toast from 'react-native-toast-message';
 import {ErrorMessage} from "../../helpers/HandleMessages";
 import Dialog from "react-native-dialog"
 import {useNavigation} from "@react-navigation/native";

@@ -17,6 +17,9 @@ export default function Login({navigation}){
 			
 			setCpf(cpf)
 			setPassword(password)
+			if(cpf && password){
+				Login(cpf, password)
+			}
 		})()
 	}, [])
 	
