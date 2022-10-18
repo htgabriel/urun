@@ -7,7 +7,7 @@ export default function Challenges(){
     
     return <WebView
         originWhitelist={['http://*', 'https://*']}
-        source={{ uri: `https://www.sistematreinoonline.com.br/novo/inteface/urun_conquistas.php?emp=8254&atleta=${user?.id}&app=2&tecnicoto=1` }}
+        source={{ uri: `https://www.sistematreinoonline.com.br/novo/interface/urun_conquistas.php?emp=8254&atleta=${user?.id}&app=2&tecnicoto=1` }}
         style={{ marginTop: 0 }}
     />
 };
