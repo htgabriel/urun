@@ -2,8 +2,8 @@ import React, {useContext, useEffect, useState} from "react";
 import {Image, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {Button, TextInput} from "react-native-paper";
 import LinearGradient from "react-native-linear-gradient";
-import UserContext from "../contexts/UserContext";
-import {getItem} from "../helpers/AsyncStorage";
+import UserContext from "../../contexts/UserContext";
+import {getItem} from "../../helpers/AsyncStorage";
 
 export default function Login({navigation}){
 	const [cpf, setCpf] = useState()
@@ -32,7 +32,7 @@ export default function Login({navigation}){
 			<View style={styles.containerImage}>
 				<Image
 					style={styles.image}
-					source={require("../assets/logo.png")}
+					source={require("../../assets/logo.png")}
 				/>
 			</View>
 			
