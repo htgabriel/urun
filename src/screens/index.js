@@ -1,13 +1,13 @@
 import Activities from "./Activities/Activities";
 import Challenges from "./Challenges";
 import Home from "./Home";
-import Login from "./Login";
+import Login from "./Auth/Login";
 import Menu from "./Menu/Menu";
 import MenuActivities from "./Activities/MenuActivities";
 import Message from "./Menu/Messages";
-import PasswordRecovery from "./PasswordRecovery";
+import PasswordRecovery from "./Auth/PasswordRecovery";
 import Profile from "./Menu/Profile";
-import Register from "./Register";
+import Register from "./Auth/Register";
 import Training from "./Training";
 import VirtualRace from "./VirtualRace";
 
