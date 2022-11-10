@@ -6,14 +6,14 @@ import {useNavigation} from "@react-navigation/native";
 export default function MenuActivities(){
     const navigation = useNavigation()
     
-    const ButtonActivities = ({label}) => (
+    const ButtonActivities = ({label, type}) => (
         <Button
             buttonColor={"#cddc3a"}
             mode={"contained"}
             style={styles.btnActivities}
             textColor={"#000"}
             labelStyle={{fontSize: 25}}
-            onPress={() => navigation.navigate("Activities")}
+            onPress={() => navigation.navigate("Activities", { type })}
         >
             {label}
         </Button>
@@ -25,9 +25,9 @@ export default function MenuActivities(){
                 <Text style={styles.title}>{"Selecione a atividade para iniciar"}</Text>
             </View>
             
-            <ButtonActivities label={"CAMINHADA"} />
-            <ButtonActivities label={"CORRIDA"} />
-            <ButtonActivities label={"CICLISMO"} />
+            <ButtonActivities label={"CAMINHADA"} type={"walk"} />
+            <ButtonActivities label={"CORRIDA"} type={"run"} />
+            <ButtonActivities label={"CICLISMO"} type={"bike"} />
         </View>
     )
 };

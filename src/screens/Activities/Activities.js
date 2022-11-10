@@ -12,13 +12,14 @@ import ReactNativeForegroundService from "@supersami/rn-foreground-service";
 import {ErrorMessage} from "../../helpers/HandleMessages";
 import Dialog from "react-native-dialog"
 import {useNavigation} from "@react-navigation/native";
+import moment from "moment";
 
 const LATITUDE_DELTA = 0.009;
 const LONGITUDE_DELTA = 0.009;
 const LATITUDE = 0;
 const LONGITUDE = 0;
 
-export default function Activities() {
+export default function Activities({route: {params: {type}}}) {
     const [isRunning, setIsRunning] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [timer, setTimer] = useState(null);
@@ -49,6 +50,7 @@ export default function Activities() {
         distanceTravelledRounded: 0,
         elapsedTime: 0,
     })
+    const [intervals, setIntervals] = useState([])
     
     useEffect(() => {
         (async () => {
@@ -107,8 +109,19 @@ export default function Activities() {
     // CALCULA O RITMO ATUAL DE ACORDO COM A DISTANCIA PERCORRIDA E O TEMPO
     useEffect(() => {
         const distanceTravelledRounded = parseInt(distanceTravelled)
-        
+    
         if(distanceTravelledRounded > actualPace?.distanceTravelledRounded){
+            let count = distanceTravelledRounded - 1
+            let lastTotalDuration = intervals.filter(v => v.distance === count)[0]?.totalDuration
+            
+            setIntervals(intervals => [...intervals, {
+                date: moment().utcOffset("-0300").format("YYYY-MM-DD HH:mm:ss"),
+                distance: distanceTravelledRounded,
+                totalDuration: formatTimeString(elapsedTime, null),
+                // intervalDuration: lastTotalDuration ? formatTimeString(elapsedTime - lastTotalDuration, null) : formatTimeString(elapsedTime, null),
+                pace: formatTimeString(elapsedTime - actualPace.elapsedTime)
+            }])
+    
             setActualPace({
                 distanceTravelledRounded,
                 elapsedTime: elapsedTime - actualPace.elapsedTime
@@ -208,6 +221,19 @@ export default function Activities() {
     }
     
     function _handleFinish(){
+        const startTime = moment(startTime).utcOffset("-0300").format("YYYY-MM-DD HH:mm:ss")
+        const endTime = moment(startTime).add(parseInt(elapsedTime/1000), "seconds").format("YYYY-MM-DD HH:mm:ss")
+        const dataWebService = {
+            points: routeCoordinates,
+            distance: distanceTravelled,
+            start: startTime,
+            end: endTime,
+            duration: formatTimeString(elapsedTime, null),
+            intervals,
+            mediumPace: convertNumToTime(mediumPace),
+            type
+        }
+        
         setIsRunning(false)
         setIsPaused(false)
         setElapsedTime(0)
@@ -215,6 +241,8 @@ export default function Activities() {
         setModalVisible(false)
         clearInterval(timer)
         Geolocation.stopObserving()
+        
+        console.log(JSON.stringify(dataWebService))
     }
     
     async function _handleMap(){
